@@ -65,3 +65,15 @@ Then in a Julia terminal, write
 using Pkg
 Pkg.add("https://github.com/mberaha/Sketch.jl")
 ```
+
+Then install the `conformalized-sketching` Python package
+
+```
+python3 -m pip install git+https://github.com/mberaha/conformalized-sketching.git
+``````
+
+and run 
+
+```
+python3 simulations/conformal.py
+```
