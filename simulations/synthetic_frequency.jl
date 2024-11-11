@@ -11,14 +11,13 @@ import Logging
 Logging.disable_logging(Logging.Warn) # or e.g. Logging.Info
 
 J = 128
-NREP = 10
+NREP = 50
 NTRAIN = 5000
 NDATA = 100000
 
 PY_ALPHAS = [0.0, 0.25, 0.5, 0.75]
 PY_THETAS = [1.0, 10.0, 100.0, 1000.0]
 ZIPF_C = [1.3, 1.6, 1.9, 2.2]
-# ZIPF_C = [1.3, 1.6, 1.9]
 
 Random.seed!(20230719)
 
@@ -38,6 +37,8 @@ function estimate_params(model::String, sketch::AbstractVector, train_data::Abst
         return Sketch.fit_nig(sketch)
     elseif model == "NGG"
         return Sketch.fit_ngg(train_data)
+    elseif model == "PY"
+        return Sketch.fit_py(train_data)
     end
 end
 
@@ -50,7 +51,7 @@ function run_simulation(true_dataset, data_gen, data_gen_params, nrep)
     train_data = true_dataset[1:NTRAIN]
     uni2cnt = countmap(true_dataset)
 
-    models = ["DP", "NIG", "NGG"]
+    models = ["DP", "NGG"]
     params = []
 
     for m in models
@@ -65,7 +66,14 @@ function run_simulation(true_dataset, data_gen, data_gen_params, nrep)
         bin = get_freq_bin(true_f)
         n_by_bin[bin] += 1.0
         cj = sketch[hf(k)]
-        est_f = Sketch.freq_est.(params, cj, J)
+        est_f = zeros(length(params))
+        for (i, model) in enumerate(models)
+            if model == "PY"
+                est_f[i] = Sketch.freq_est!(params[i], Cj, J, NDATA)
+            else
+                est_f[i] = Sketch.freq_est(params[i], cj, J)
+            end
+        end
         err = abs.(true_f .- est_f)
         freq_est_errors[:, bin] .+= err
     end
@@ -74,31 +82,12 @@ function run_simulation(true_dataset, data_gen, data_gen_params, nrep)
         freq_est_errors[:, b] ./= n_by_bin[b]
     end
 
-
-    if data_gen == "py"
-        filename = "results/py_$(data_gen_params[1])_$(data_gen_params[2])_rep_$(nrep).jdat"
-    else 
-        filename = "results/zipf_$(data_gen_params)_rep_$(nrep).jdat"
-    end
-
-    out = Dict(
-        "true_data" => true_dataset,
-        "hf" => hf,
-        "est_params" => params,
-        "errors" => freq_est_errors,
-        "data_gen_params" => data_gen_params,
-        "data_gen" => data_gen,
-        "rep" => nrep
-    )
-
-    Serialization.serialize(filename, out)
-
     return freq_est_errors
 end
 
 function run_simulation_mock(true_dataset, data_gen, data_gen_params, nrep)
     nbins = get_freq_bin(1e12)
-    models = ["DP", "NIG", "NGG"]
+    models = ["DP", "NGG"]
     freq_est_errors = zeros((length(models), nbins))
     return freq_est_errors
 end
@@ -131,8 +120,6 @@ function main()
             errors[i] = run_simulation(datasets[i], data_gen[i], params[i], repnum)
         end
 
-        Serialization.serialize("results/frequency_sim_errors_rep_$(repnum).jdat", errors)
-
         println("ASSEMBLING DATAFRAME")
 
         bins = [0, 1, 4, 16, 64, 256, "Inf"]
@@ -144,7 +131,7 @@ function main()
             currdf = DataFrame(errors[i], colnames)
             currdf[!, "DataGen"] = repeat([data_gen[i]], size(errors[i], 1))
             currdf[!, "Params"] = repeat([params[i]], size(errors[i], 1))
-            currdf[!, "Model"] = ["DP", "NIG", "NGG"]
+            currdf[!, "Model"] = ["DP", "NGG"]
             if df === nothing
                 df = currdf
             else 
@@ -164,6 +151,4 @@ function main()
     CSV.write("results/frequency_simulation_results.csv", final_df)
 end 
 
-
 main()
-

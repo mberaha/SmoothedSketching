@@ -52,6 +52,7 @@ function frequency_simulation(data, test_data)
     maes_ngg_prod = zeros(length(Js), n_mae_buckets)
     maes_ngg_min = zeros(length(Js), n_mae_buckets)
     maes_cms = zeros(length(Js), n_mae_buckets)
+    maes_debiased = zeros(length(Js), n_mae_buckets)
 
     ndata_by_bucket = zeros(n_mae_buckets)
     for (k, cnt) in uniq2cnt_test
@@ -67,6 +68,11 @@ function frequency_simulation(data, test_data)
         hash_data = Sketch.hash_dataset(data, hash_functions, J)
         dp_p = params = Sketch.fit_multiview(hash_data, data[1:10000], "DP")
         ngg_intcache = Sketch.beta_integral_ngg(params=ngg_p, J=J)
+        
+        tmp = vec(hash_data)
+        cms_bias = quantile(tmp, size(hash_data)[2] / length(tmp))
+
+
         for (k, test_cnt) in uniq2cnt_test
             hs = Int.([h(k) for h in hash_functions])
 
@@ -78,6 +84,9 @@ function frequency_simulation(data, test_data)
             min_c = Int(minimum(c_js))
             cms_est = min_c
             maes_cms[i, mae_bucket] += test_cnt * abs(cnt - cms_est) / ndata_by_bucket[mae_bucket]
+
+            debiased_cms_est = min_c - cms_bias
+            maes_debiased[i, mae_bucket] += test_cnt * abs(cnt - debiased_cms_est) / ndata_by_bucket[mae_bucket]
             
             dp_logprobas = Sketch.freq_post.(min_c, c_js, dp_p, J, true)
             ngg_logprobas = [
@@ -126,7 +135,12 @@ function frequency_simulation(data, test_data)
     cms_df[!, "J"] = Js
     cms_df[!, "Rule"] = repeat(["CMS"], size(cms_df, 1))
 
-    maes_df = [prod_df; min_df; cms_df]
+    debiased_df = DataFrame(maes_debiased, colnames)
+    debiased_df[!, "Model"] = repeat(["D-CMS"], size(cms_df, 1))
+    debiased_df[!, "J"] = Js
+    debiased_df[!, "Rule"] = repeat(["D-CMS"], size(cms_df, 1))
+
+    maes_df = [prod_df; min_df; cms_df; debiased_df]
     CSV.write("results/bigram_maes.csv", maes_df)
 end
 

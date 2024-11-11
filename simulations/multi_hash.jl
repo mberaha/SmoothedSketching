@@ -12,7 +12,7 @@ using SharedArrays
 import Logging
 Logging.disable_logging(Logging.Warn) # or e.g. Logging.Info
 
-NREP = 10
+NREP = 50
 
 
 Js = [50, 100, 500, 1000]
@@ -45,6 +45,8 @@ function one_simulation(data, data_gen, data_gen_params, repnum)
     maes_ngg_prod = zeros(length(Js), n_mae_buckets)
     maes_ngg_min = zeros(length(Js), n_mae_buckets)
     maes_cms = zeros(length(Js), n_mae_buckets)
+    maes_debiased = zeros(length(Js), n_mae_buckets)
+
 
 
     ndata_by_bucket = zeros(n_mae_buckets)
@@ -63,6 +65,10 @@ function one_simulation(data, data_gen, data_gen_params, repnum)
         dp_p = Sketch.fit_multiview(hash_data, data[1:10000], "DP")
         ngg_intcache = Sketch.beta_integral_ngg(params=ngg_p, J=J)
 
+        tmp = vec(hash_data)
+        cms_bias = quantile(tmp, size(hash_data)[2] / length(tmp))
+
+
         for (k, cnt) in uniq2cnt
             hs = Int.([h(k) for h in hash_functions])
             mae_bucket = get_freq_bin(cnt)
@@ -72,6 +78,9 @@ function one_simulation(data, data_gen, data_gen_params, repnum)
             cms_est = min_c
             maes_cms[i, mae_bucket] += abs(cnt - cms_est) / ndata_by_bucket[mae_bucket]
             
+            debiased_cms_est = min_c - cms_bias
+            maes_debiased[i, mae_bucket] += abs(cnt - debiased_cms_est) / ndata_by_bucket[mae_bucket]
+
             dp_logprobas = Sketch.freq_post.(min_c, c_js, dp_p, J, true)
             ngg_logprobas = [
                 Sketch.freq_post!(min_c, c, ngg_p, J, true, ngg_intcache) for c in c_js]
@@ -95,31 +104,28 @@ function one_simulation(data, data_gen, data_gen_params, repnum)
         "errors_ngg_min" => maes_ngg_min,
         "errors_ngg_prod" => maes_ngg_prod,
         "errors_cms" => maes_cms,
+        "errors_debiased" => maes_debiased,
         "params" => data_gen_params,
         "rep" => repnum
     )
 
-    filename = "results/multiview_py_$(data_gen_params[1])_$(data_gen_params[2])_rep_$(repnum).jdat"
-    Serialization.serialize(filename, out)
+    # filename = "results/multiview_py_$(data_gen_params[1])_$(data_gen_params[2])_rep_$(repnum).jdat"
+    # Serialization.serialize(filename, out)
 
-    return maes_dp_min, maes_dp_prod, maes_ngg_min, maes_ngg_prod, maes_cms
+    return maes_dp_min, maes_dp_prod, maes_ngg_min, maes_ngg_prod, maes_cms, maes_debiased
 end
 
 
 function main()
 
-    # py_params = [
-    #     repeat(PY_THETAS,1,length(PY_ALPHAS))'[:] repeat(PY_ALPHAS,length(PY_THETAS),1)[:]]
-    # params = convert(Vector{Any}, [py_params[i, :] for i in 1:size(py_params,1)])
         
     error_dfs_prod = []
     error_dfs_min = []
     error_dfs_cms = []
+    error_dfs_debiased = []
 
-    # 
-    # @distributed 
-    @Threads.threads 
-    for repnum in 1:NREP
+
+    @Threads.threads for repnum in 1:NREP
         py_params = [
             repeat(PY_THETAS,1,length(PY_ALPHAS))'[:] repeat(PY_ALPHAS,length(PY_THETAS),1)[:]]
         params = convert(Vector{Any}, [py_params[i, :] for i in 1:size(py_params,1)])
@@ -129,6 +135,7 @@ function main()
         min_ngg_errors = Array{Array{Float64, 2}}(undef, length(params))
         prod_ngg_errors = Array{Array{Float64, 2}}(undef, length(params))
         cms_errors = Array{Array{Float64, 2}}(undef, length(params))
+        debiased_errors = Array{Array{Float64, 2}}(undef, length(params))
 
 
         # @Threads.threads 
@@ -141,7 +148,10 @@ function main()
             min_ngg_errors[i] = tmp[3]
             prod_ngg_errors[i] = tmp[4]
             cms_errors[i] = tmp[5]
+            debiased_errors[i] = tmp[6]
         end
+
+
         println("ASSEMBLING DATAFRAME")
 
         bins = [0, 1, 4, 16, 64, 256, "Inf"]
@@ -170,7 +180,7 @@ function main()
         prod_df[!, "repnum"] = repeat([repnum], size(prod_df, 1))
         error_dfs_prod = push!(error_dfs_prod, prod_df)
 
-        CSV.write("results/multiview_prod_simulation_rep_$(repnum).csv", prod_df)
+        # # CSV.write("results/multiview_prod_simulation_rep_$(repnum).csv", prod_df)
 
         min_df = nothing
         for i in 1:length(min_dp_errors)
@@ -194,7 +204,7 @@ function main()
         min_df[!, "repnum"] = repeat([repnum], size(min_df, 1))
         error_dfs_min = push!(error_dfs_min, min_df)
 
-        CSV.write("results/multiview_min_simulation_rep_$(repnum).csv", min_df)
+        # CSV.write("results/multiview_min_simulation_rep_$(repnum).csv", min_df)
 
         cms_df = nothing
         for i in 1:length(cms_errors)
@@ -212,8 +222,25 @@ function main()
         cms_df[!, "repnum"] = repeat([repnum], size(cms_df, 1))
         error_dfs_cms = push!(error_dfs_cms, cms_df)
 
-        CSV.write("results/multiview_cms_simulation_rep_$(repnum).csv", 
-        cms_df)
+        # CSV.write("results/multiview_cms_simulation_rep_$(repnum).csv", cms_df)
+
+        debiased_df = nothing
+        for i in 1:length(debiased_errors)
+            currdf = DataFrame(debiased_errors[i], colnames)
+            currdf[!, "DataGen"] = repeat(["py"], size(debiased_errors[i], 1))
+            currdf[!, "Params"] = repeat([params[i]], size(debiased_errors[i], 1))
+            currdf[!, "Model"] = repeat(["D-CMS"], size(debiased_errors[i], 1))
+            currdf[!, "J"] = Js
+            if debiased_df === nothing
+                debiased_df = currdf
+            else 
+                debiased_df = [debiased_df; currdf]
+            end
+        end
+        debiased_df[!, "repnum"] = repeat([repnum], size(debiased_df, 1))
+        error_dfs_debiased = push!(error_dfs_debiased, debiased_df)
+
+        # CSV.write("results/multiview_debiased_simulation_rep_$(repnum).csv", debiased_df)
     end
 
     final_df_prod = error_dfs_prod[1]
@@ -240,7 +267,13 @@ function main()
 
     CSV.write("results/multiview_cms_simulation_results.csv", final_df_cms)
 
-    
+    final_df_debiased = error_dfs_debiased[1]
+    for j in 2:NREP
+        final_df_debiased = [final_df_debiased; error_dfs_debiased[j]]
+    end
+    println("FINAL_DF_CMS: ", size(final_df_debiased))
+
+    CSV.write("results/multiview_debiased_simulation_results.csv", final_df_debiased)
 end 
 
 
