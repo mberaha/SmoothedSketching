@@ -1,0 +1,5 @@
+method,unique,distinct,observations,coverage,length,gap,error-mean,error-median,error-map,include-seen,sketch,data,d,w,method-unique,model,posterior,n_bins,n_track,n,seed,confidence,two_sided
+bayes,False,209,500,0.994,32.018,20.364,20.464,20.464,20.464,True,cms,PYP,20,50,False,DP,mcmc,1,250,2500,20230810,0.9,False
+bayes,False,209,500,0.994,32.018,20.364,20.464,20.464,20.464,False,cms,PYP,20,50,False,DP,mcmc,1,250,2500,20230810,0.9,False
+bayes,True,209,209,0.9856459330143541,20.923444976076556,8.956937799043063,9.07177033492823,9.07177033492823,9.07177033492823,True,cms,PYP,20,50,False,DP,mcmc,1,250,2500,20230810,0.9,False
+bayes,True,209,209,0.9856459330143541,20.923444976076556,8.956937799043063,9.07177033492823,9.07177033492823,9.07177033492823,False,cms,PYP,20,50,False,DP,mcmc,1,250,2500,20230810,0.9,False

@@ -1,0 +1,5 @@
+method,unique,distinct,observations,coverage,length,gap,error-mean,error-median,error-map,include-seen,sketch,data,d,w,method-unique,model,posterior,n_bins,n_track,n,seed,confidence,two_sided
+conformal,False,274,50000,0.99244,326.4693,320.12454,163.17473,163.17473,163.17473,True,cms,PYP,1,1000,False,NGG,mcmc,1,25000,250000,20230810,0.9,False
+conformal,False,73,125,0.616,14.408,-371.688,378.424,378.424,378.424,False,cms,PYP,1,1000,False,NGG,mcmc,1,25000,250000,20230810,0.9,False
+conformal,True,274,274,0.7883211678832117,35.85036496350365,-156.93795620437956,201.22810218978103,201.22810218978103,201.22810218978103,True,cms,PYP,1,1000,False,NGG,mcmc,1,25000,250000,20230810,0.9,False
+conformal,True,73,73,0.6438356164383562,8.767123287671232,-216.0,219.8972602739726,219.8972602739726,219.8972602739726,False,cms,PYP,1,1000,False,NGG,mcmc,1,25000,250000,20230810,0.9,False
