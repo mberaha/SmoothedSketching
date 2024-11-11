@@ -5,5 +5,6 @@ include("multiview.jl")
 include("smoothed_estimators.jl")
 include("estimate_params.jl")
 include("data.jl")
+include("pyp_sketch.jl")
 
 end
