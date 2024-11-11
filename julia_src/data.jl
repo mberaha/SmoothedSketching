@@ -1,6 +1,8 @@
-using AdaptiveRejectionSampling
-using Distributions
-using Random
+using AddPackage
+
+@add using AdaptiveRejectionSampling
+@add using Distributions
+@add using Random
  
 include("utils.jl")
 
@@ -17,6 +19,7 @@ function sample_py_stickbreak(theta, alpha, ndata)
     _, idx = unique_ids(out)
     return idx
 end
+
 
 function sample_py_urn(theta, alpha, ndata)
     cnts = [1]
