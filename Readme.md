@@ -1,4 +1,4 @@
-# Code for ``Frequency and cardinality recovery from sketched data: a novel approach bridging Bayesian and frequentist views''
+# Code for ``A smoothed-Bayesian approach to frequency recovery from sketched data'' by Beraha, Favaro, and Sesia [(arXiv)](https://arxiv.org/abs/2309.15408)
 
 See below for usage instructions
 
