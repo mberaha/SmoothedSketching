@@ -1,10 +1,12 @@
-using SpecialFunctions
-using NNlib
-using Optimization
-using OptimizationOptimJL
-using Random
-using Distributions
-using StatsBase
+using AddPackage
+
+@add using SpecialFunctions
+@add using NNlib
+@add using Optimization
+@add using OptimizationOptimJL
+@add using Random
+@add using Distributions
+@add using StatsBase
 
 include("estimate_params.jl")
 include("smoothed_estimators.jl")
@@ -62,7 +64,6 @@ function eval!(integral::beta_integral_ngg, a::Float64, b::Float64)
     end
 
     return out
-
 end
 
 

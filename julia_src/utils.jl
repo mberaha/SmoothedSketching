@@ -1,6 +1,8 @@
-using Distributions
-using SpecialFunctions
-using Random
+using AddPackage
+
+@add using Distributions
+@add using SpecialFunctions
+@add using Random
 
 include("params.jl")
 
@@ -104,7 +106,7 @@ end
 
 function hash_dataset(data, hash_fns, width)
     m = length(hash_fns)
-    out = zeros((m, width))
+    out = zeros(Int, (m, width))
     for i = 1:m
         cmap = countmap(hash_fns[i].(data))
         for (k, v) in cmap
@@ -117,10 +119,15 @@ end
 
 
 function lbinom(a, b)
-    return loggamma(a + 1) - loggamma(a - b) - loggamma(b + 1)
+    return loggamma(a + 1) - loggamma(a - b + 1) - loggamma(b + 1)
 end
 
 
 function lgammainc(x, a)
     return loggamma(a) + log(gamma_inc(a, x)[1])
+end
+
+
+function lpoch(x, n)
+    return loggamma(x + n)  - loggamma(x)
 end

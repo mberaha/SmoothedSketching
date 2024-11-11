@@ -1,9 +1,11 @@
-using SpecialFunctions
-using NNlib
-using Optimization
-using OptimizationOptimJL
-using Random
-using Distributions
+using AddPackage
+
+@add using SpecialFunctions
+@add using NNlib
+@add using Optimization
+@add using OptimizationOptimJL
+@add using Random
+@add using Distributions
 using StatsBase
 
 include("params.jl")
