@@ -2,11 +2,11 @@ import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import pdb
+
 
 from itertools import product
-from joblib import Parallel, delayed
-
+from joblib import Parallel, delayed, effective_n_jobs
+from sklearn.utils import gen_even_slices
 
 SEED = 20230810
 
@@ -19,9 +19,9 @@ PY_THETAS = [10.0, 100.0]
 NDATA = 250000
 NTRAIN = 25000
 NTEST = 2500
-NREP = 20
+NREP = 50
 
-NJOBS = 16
+NJOBS = 32
 
 
 # NDATA = 2500
@@ -70,7 +70,15 @@ def run_one(py_theta, py_alpha, method, model, J, rule, repnum):
         sketch_name + "_" + "PYP_" + str(py_theta) + "_" + str(py_alpha) + "_d" + str(M) + "_w" + str(J) + "_n" + str(NDATA) + "_repnum" + str(repnum)
     process_results(results, outfile_prefix, method_name, model, sketch_name, "PYP", M, J, 
                     method, False, "mcmc", n_bins, n_track, NDATA, rep_seed, 0.9, False)
-    
+
+
+def run_chunk(params):
+    for p in params:
+        theta, alpha, method, model, rule, j = p
+        print("Running PYP({0}, {1}), J: {2}, Method: {3}, Model: {4}, Rule: {5}, REP: {6}".format(
+                                    theta, alpha, args.J, method, model, rule, j))
+        run_one(theta, alpha, method, model, args.J, rule, j)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -85,12 +93,9 @@ if __name__ == "__main__":
     models = [args.model] if args.model else ["NGG", "DP"]
     rules = [args.rule] if args.rule else ["PoE", "min"]
 
-    for theta in PY_THETAS:
-        for alpha in PY_ALPHAS:
-                for method in methods:
-                     for model in models:
-                        for rule in rules:
-                            for j in range(NREP):
-                                print("Running PYP({0}, {1}), J: {2}, Method: {3}, Model: {4}, Rule: {5}, REP: {6}".format(
-                                    theta, alpha, args.J, method, model, rule, j))
-                                run_one(theta, alpha, method, model, args.J, rule, j)
+    all_params = np.array(list(product(
+        PY_THETAS, PY_ALPHAS, methods, models, rules, list(range(NREP)))), dtype=object)
+
+    Parallel(n_jobs=NJOBS)(
+        delayed(run_chunk)(all_params[s])
+        for s in gen_even_slices(len(all_params), effective_n_jobs(NJOBS)))
