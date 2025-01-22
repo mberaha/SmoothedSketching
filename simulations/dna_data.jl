@@ -175,7 +175,7 @@ end
 
 
 function main()
-    dna_seqs = CSV.read("data/dna_idx.csv", DataFrame)[:, 1]
+    dna_seqs = CSV.read("data/dna_idx_short.csv", DataFrame)[:, 1]
     train = dna_seqs[1:1000000]
     test = dna_seqs[1000000:2000000]
 

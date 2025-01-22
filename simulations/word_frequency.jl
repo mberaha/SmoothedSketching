@@ -173,7 +173,7 @@ end
 
 
 function main()
-    bigrams = CSV.read("data/bigram_idx.csv", DataFrame)[:, 1]
+    bigrams = CSV.read("data/bigram_idx_short.csv", DataFrame)[:, 1]
     train = bigrams[1:500000]
     test = bigrams[500000:600000]
 
