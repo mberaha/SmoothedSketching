@@ -18,15 +18,15 @@ The code implementing our methods is written in `Julia` and can be found in the 
 We make use of the following packages
 
 ```
-AdaptiveRejectionSampling
-Distributions
-Integrals
-NNlib
-Optimization
-OptimizationOptimJL
-Random
-SpecialFunctions
-StatsBase
+AdaptiveRejectionSampling v0.2.1
+AddPackage v0.1.1
+Distributions v0.25.112
+Integrals v4.1.0
+NNlib v0.8.21
+Optimization v3.20.2
+OptimizationOptimJL v0.1.14
+SpecialFunctions v2.4.0
+StatsBase v0.34.3
 ```
 
 For instance, to run the example on the bigram frequency, from the root folder run
@@ -41,9 +41,9 @@ most experiments benefit from using parallel computing. To this end either prepe
 Plots are produced via the Python notebook `simulations/Report.ipynb` which requires the Python packages
 
 ```
-numpy
-matplotlib
-pandas
+numpy>=1.24.4
+matplotlib>=3.7.1
+pandas>=1.5.3
 ```
 
 ## Conformal Simulation
@@ -51,29 +51,30 @@ pandas
 To run the experiment on conformal inference, you should first install the following Python packages
 
 ```
-scipy
-scikit-learn
-tqdm
-mmh3
-methodtools
-pyjulia
+joblib>=1.3.1
+matplotlib>=3.7.1
+methodtools>=0.4.7
+mmh3>=3.0.0
+numpy>=1.24.4
+pandas>=1.5.3
+pyjulia>=0.6.1
+scikit-learn>=1.3.0
+scipy>=1.10.1
+tqdm>=4.65.0
 ```
 
 Then in a Julia terminal, write
-
 ```
 using Pkg
 Pkg.add("https://github.com/mberaha/Sketch.jl")
 ```
 
 Then install the `conformalized-sketching` Python package
-
 ```
-python3 -m pip install git+https://github.com/mberaha/conformalized-sketching.git
+python3 -m pip install git+https://github.com/mberaha/conformalized-sketching.git@cdfb10a3236e54bbb6c80af5b869232c083408a0
 ``````
 
 and run 
-
 ```
 python3 simulations/conformal.py
 ```
